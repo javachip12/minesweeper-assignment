@@ -93,7 +93,7 @@ class Board:
         
         for dx, dy in deltas:
             new_col = col + dx
-            new_row = col + dy
+            new_row = row + dy
 
             if self.is_inbounds(new_col, new_row):
                 result.append((new_col, new_row))
@@ -113,7 +113,29 @@ class Board:
 
         # self._mines_placed = True
 
-        pass
+        all_positions = [(c, r) for r in range(self.rows) for c in range(self.cols)]
+        forbidden = {(safe_col, safe_row)} | set(self.neighbors(safe_col, safe_row))
+        pool = [p for p in all_positions if p not in forbidden]
+        random.shuffle(pool)
+
+        for (c, r) in pool[:self.num_mines]:
+            idx = self.index(c, r)
+            self.cells[idx].state.is_mine = True
+        
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = self.cells[self.index(c, r)]
+                count = 0
+
+                for (nc, nr) in self.neighbors(c, r):
+                    neighbor_idx = self.index(nc, nr)
+                    if self.cells[neighbor_idx].state.is_mine:
+                        count += 1
+                
+                cell.state.adjacent = count
+
+        self._mines_placed = True
+        
 
     def reveal(self, col: int, row: int) -> None:
         # TODO: Reveal a cell; if zero-adjacent, iteratively flood to neighbors.
