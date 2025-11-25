@@ -146,7 +146,32 @@ class Board:
 
         
         # self._check_win()
-        pass
+        if not self.is_inbounds(col, row):
+            return
+        
+        idx = self.index(col, row)
+        cell = self.cells[idx]
+
+        if cell.state.is_revealed or cell.state.is_flagged:
+            return
+        
+        if not self._mines_placed:
+            self.place_mines(col, row)
+            cell = self.cells[idx]
+
+        cell.state.is_revealed = True
+        self.revealed_count += 1
+
+        if cell.state.is_mine:
+            self.game_over = True
+            self._reveal_all_mines()
+            return
+        
+        if cell.state.adjacent == 0:
+            for (nc, nr) in self.neighbors(col, row):
+                self.reveal(nc, nr)
+        
+        self._check_win()
 
     def toggle_flag(self, col: int, row: int) -> None:
         # TODO: Toggle a flag on a non-revealed cell.
