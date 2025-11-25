@@ -84,7 +84,21 @@ class Board:
         # result = []
         
         # return result
-        pass
+        deltas = [
+            (-1, -1), (0, -1), (1, -1),
+            (-1, 0),            (1, 0),
+            (-1, 1),  (0, 1),   (1, 1),
+        ]
+        result = []
+        
+        for dx, dy in deltas:
+            new_col = col + dx
+            new_row = col + dy
+
+            if self.is_inbounds(new_col, new_row):
+                result.append((new_col, new_row))
+
+        return result
 
     def place_mines(self, safe_col: int, safe_row: int) -> None:
         # TODO: Place mines randomly, guaranteeing the first click and its neighbors are safe. And Compute adjacency counts
