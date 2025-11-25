@@ -178,7 +178,14 @@ class Board:
         # if not self.is_inbounds(col, row):
         #     return
         
-        pass
+        if not self.is_inbounds(col, row):
+            return
+        
+        idx = self.index(col, row)
+        cell = self.cells[idx]
+
+        if not cell.state.is_revealed:
+            cell.state.is_flagged = not cell.state.is_flagged
 
     def flagged_count(self) -> int:
         # TODO: Return current number of flagged cells.
