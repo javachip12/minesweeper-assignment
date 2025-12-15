@@ -12,7 +12,7 @@ The logic lives in components.Board; this module should not implement rules.
 import sys
 
 import pygame
-
+import os # [Issue #4] 파일 경로 확인을 위해 추가
 import config
 from components import Board
 from pygame.locals import Rect
@@ -71,19 +71,29 @@ class Renderer:
                 )
         pygame.draw.rect(self.screen, config.color_grid, rect, 1)
 
-    def draw_header(self, remaining_mines: int, time_text: str) -> None:
-        """Draw the header bar containing remaining mines and elapsed time."""
+    # [Issue #4] high_score_text 인자 추가
+    def draw_header(self, remaining_mines: int, time_text: str, high_score_text: str = "") -> None:
         pygame.draw.rect(
             self.screen,
             config.color_header,
-            Rect(0, 0, config.width, config.margin_top - 4),
+            pygame.Rect(0, 0, config.width, config.margin_top - 4),
         )
+        
+        # 1. 왼쪽: 남은 지뢰 수
         left_text = f"Mines: {remaining_mines}"
-        right_text = f"Time: {time_text}"
         left_label = self.header_font.render(left_text, True, config.color_header_text)
-        right_label = self.header_font.render(right_text, True, config.color_header_text)
         self.screen.blit(left_label, (10, 12))
+        
+        # 2. 오른쪽: 현재 시간
+        right_text = f"Time: {time_text}"
+        right_label = self.header_font.render(right_text, True, config.color_header_text)
         self.screen.blit(right_label, (config.width - right_label.get_width() - 10, 12))
+
+        # [Issue #4] 3. 중앙: 최고 기록 표시
+        if high_score_text:
+            center_label = self.header_font.render(high_score_text, True, (255, 215, 0)) # 금색(Gold)
+            center_x = config.width // 2 - center_label.get_width() // 2
+            self.screen.blit(center_label, (center_x, 12))
 
     def draw_result_overlay(self, text: str | None) -> None:
         """Draw a semi-transparent overlay with centered result text, if any."""
@@ -96,6 +106,28 @@ class Renderer:
         rect = label.get_rect(center=(config.width // 2, config.height // 2))
         self.screen.blit(label, rect)
 
+# [Issue #4] 하이 스코어 관리 함수들
+HIGHSCORE_FILE = "highscores.txt"
+
+def load_highscore():
+    """파일에서 최고 기록(밀리초)을 읽어옴. 없으면 None 반환"""
+    if not os.path.exists(HIGHSCORE_FILE):
+        return None
+    try:
+        with open(HIGHSCORE_FILE, "r") as f:
+            return int(f.read().strip())
+    except:
+        return None
+
+def save_highscore(score_ms):
+    """현재 기록이 최고 기록보다 빠르면 파일에 저장하고 True 반환"""
+    current_best = load_highscore()
+    # 기존 기록이 없거나(None), 현재 기록이 더 빠를(작을) 경우 갱신
+    if current_best is None or score_ms < current_best:
+        with open(HIGHSCORE_FILE, "w") as f:
+            f.write(str(score_ms))
+        return True
+    return False
 
 class InputController:
     """Translates input events into game and board actions."""
@@ -224,17 +256,39 @@ class Game:
 
     def draw(self):
         """Render one frame: header, grid, result overlay."""
+        # 하이라이트 시간 만료 체크
         if pygame.time.get_ticks() > self.highlight_until_ms and self.highlight_targets:
             self.highlight_targets.clear()
+        
         self.screen.fill(config.color_bg)
-        remaining = max(0, config.num_mines - self.board.flagged_count())
-        time_text = self._format_time(self._elapsed_ms())
-        self.renderer.draw_header(remaining, time_text)
+
+        # 1. 남은 지뢰 수 계산
+        flag_count = self.board.flagged_count()
+        display_mines = config.num_mines - flag_count  # 전체 지뢰 - 깃발 수
+
+        # 2. 현재 시간 포맷팅
+        time_ms = self._elapsed_ms()
+        time_text = self._format_time(time_ms)
+
+        # 3. [Issue #4] 최고 기록 불러오기 및 텍스트 생성
+        best_ms = load_highscore()
+        if best_ms is not None:
+            best_text = f"Best: {self._format_time(best_ms)}"
+        else:
+            best_text = "Best: --:--"
+
+        # 4. 헤더 그리기
+        # 인자 순서: (남은 지뢰 수, 현재 시간, 최고 기록 텍스트)
+        self.renderer.draw_header(display_mines, time_text, best_text)
+
+        # 5. 셀(Grid) 그리기
         now = pygame.time.get_ticks()
         for r in range(self.board.rows):
             for c in range(self.board.cols):
                 highlighted = (now <= self.highlight_until_ms) and ((c, r) in self.highlight_targets)
                 self.renderer.draw_cell(c, r, highlighted)
+        
+        # 6. 결과 오버레이 그리기
         self.renderer.draw_result_overlay(self._result_text())
         pygame.display.flip()
 
@@ -246,10 +300,35 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.reset()
+                
+                # [Issue #2: 난이도 조절] (이전 작업 내용 복구)
+                elif event.key == pygame.K_1:
+                    self.set_difficulty('Beginner')
+                elif event.key == pygame.K_2:
+                    self.set_difficulty('Intermediate')
+                elif event.key == pygame.K_3:
+                    self.set_difficulty('Expert')
+
+                # [Issue #3: 힌트 기능] (이전 작업 내용 복구)
+                elif event.key == pygame.K_h:
+                    if self.started and not self.board.game_over:
+                        self.board.reveal_hint()
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.input.handle_mouse(event.pos, event.button)
+        #게임 종료/승리 체크 로직
         if (self.board.game_over or self.board.win) and self.started and not self.end_ticks_ms:
             self.end_ticks_ms = pygame.time.get_ticks()
+
+            # [Issue #4: 하이 스코어 저장]
+            # 게임을 승리했을 때만 기록을 저장.
+            if self.board.win:
+                elapsed = self.end_ticks_ms - self.start_ticks_ms
+                # save_highscore 함수는 run.py 상단에 추가되어 있어야 합니다.
+                if save_highscore(elapsed):
+                    print(f"New High Score! {elapsed}ms")
+                else:
+                    print(f"Game Cleared! {elapsed}ms")
         self.draw()
         self.clock.tick(config.fps)
         return True
