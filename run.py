@@ -246,6 +246,14 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.reset()
+
+                # ... (난이도 설정 코드들 1, 2, 3 ...) ...
+
+                # [Issue #3] 'H' 키를 누르면 힌트 사용
+                elif event.key == pygame.K_h:
+                    #게임이 진행 중이고, 아직 안 끝났을 때만 작동
+                    if self.started and not self.board.game_over:
+                        self.board.reveal_hint()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.input.handle_mouse(event.pos, event.button)
         if (self.board.game_over or self.board.win) and self.started and not self.end_ticks_ms:
