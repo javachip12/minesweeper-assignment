@@ -71,8 +71,9 @@ class Renderer:
                 )
         pygame.draw.rect(self.screen, config.color_grid, rect, 1)
 
-    # [Issue #4] high_score_text 인자 추가
-    def draw_header(self, remaining_mines: int, time_text: str, high_score_text: str = "") -> None:
+    #[수정] time_color 파라미터를 추가했습니다.
+    def draw_header(self, remaining_mines: int, time_text: str, high_score_text: str = "", time_color: tuple = config.color_header_text) -> None:
+        """Draw the header bar containing remaining mines and elapsed time."""
         pygame.draw.rect(
             self.screen,
             config.color_header,
@@ -82,6 +83,8 @@ class Renderer:
         # 1. 왼쪽: 남은 지뢰 수
         left_text = f"Mines: {remaining_mines}"
         left_label = self.header_font.render(left_text, True, config.color_header_text)
+        # [수정] 고정된 색상 대신 전달받은 time_color를 사용합니다.
+        right_label = self.header_font.render(right_text, True, time_color)
         self.screen.blit(left_label, (10, 12))
         
         # 2. 오른쪽: 현재 시간
@@ -283,6 +286,28 @@ class Game:
             self.highlight_targets.clear()
         
         self.screen.fill(config.color_bg)
+        remaining = max(0, config.num_mines - self.board.flagged_count())
+
+        # [수정] 
+        # 1. 현재 시간(밀리초, 초) 계산
+        elapsed_ms = self._elapsed_ms()
+        elapsed_sec = elapsed_ms // 1000
+
+        # 2. 999초 제한 로직 (디테일 추가)
+        if elapsed_sec > 999:
+            time_text = "999+"
+        else:
+            time_text = self._format_time(elapsed_ms)
+
+        # 3. 60초 경과 시 빨간색 경로 로직 (디테일 추가)
+        if elapsed_sec >= 60:
+            current_time_color = (255, 50, 50) #빨간색
+        else:
+            current_time_color = config.color_header_text #기본 흰색
+
+        # 4. 헤더 그리기(색상 정보인 time_color 추가 전달)
+        self.renderer.draw_header(remaining, time_text, time_color=current_time_color)
+
 
         # 1. 남은 지뢰 수 계산
         flag_count = self.board.flagged_count()
