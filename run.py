@@ -230,6 +230,28 @@ class Game:
         self.started = False
         self.start_ticks_ms = 0
         self.end_ticks_ms = 0
+    
+    # [Issue #2] 난이도 변경 메서드
+    def set_difficulty(self, level_name: str):
+        if level_name not in config.DIFFICULTY_LEVELS:
+            return
+
+        # 1. config 값 업데이트
+        settings = config.DIFFICULTY_LEVELS[level_name]
+        config.cols = settings['cols']
+        config.rows = settings['rows']
+        config.num_mines = settings['mines']
+
+        # 2. 화면 크기(Width, Height) 재계산 (config.py의 로직과 동일하게)
+        config.width = config.margin_left + config.cols * config.cell_size + config.margin_right
+        config.height = config.margin_top + config.rows * config.cell_size + config.margin_bottom
+        config.display_dimension = (config.width, config.height)
+
+        # 3. 화면 및 보드 재생성
+        self.screen = pygame.display.set_mode(config.display_dimension)
+        self.reset()
+        print(f"Difficulty changed to: {level_name}") # 확인용 출력
+
 
     def _elapsed_ms(self) -> int:
         """Return elapsed time in milliseconds (stops when game ends)."""
@@ -302,6 +324,7 @@ class Game:
                     self.reset()
                 
                 # [Issue #2: 난이도 조절] (이전 작업 내용 복구)
+                # [Issue #2] 숫자 키(1, 2, 3)로 난이도 변경 기능 추가
                 elif event.key == pygame.K_1:
                     self.set_difficulty('Beginner')
                 elif event.key == pygame.K_2:
@@ -314,6 +337,7 @@ class Game:
                     if self.started and not self.board.game_over:
                         self.board.reveal_hint()
 
+                    
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.input.handle_mouse(event.pos, event.button)
         #게임 종료/승리 체크 로직
