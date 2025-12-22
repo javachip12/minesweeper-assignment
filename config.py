@@ -81,3 +81,9 @@ result_overlay_alpha = 120
 # Misc
 title = "Minesweeper"
 
+# [Issue #2] 난이도 프리셋 설정
+DIFFICULTY_LEVELS = {
+    'Beginner': {'cols': 10, 'rows': 10, 'mines': 10},          #초급
+    'Intermediate': {'cols': 15, 'rows': 15, 'mines': 40},      #중급
+    'Expert': {'cols': 20, 'rows': 20, 'mines': 80},            #고급 
+}
