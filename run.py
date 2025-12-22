@@ -83,13 +83,13 @@ class Renderer:
         # 1. 왼쪽: 남은 지뢰 수
         left_text = f"Mines: {remaining_mines}"
         left_label = self.header_font.render(left_text, True, config.color_header_text)
+        self.screen.blit(left_label, (20, 12))
         # [수정] 고정된 색상 대신 전달받은 time_color를 사용합니다.
-        right_label = self.header_font.render(right_text, True, time_color)
-        self.screen.blit(left_label, (10, 12))
+      
         
         # 2. 오른쪽: 현재 시간
         right_text = f"Time: {time_text}"
-        right_label = self.header_font.render(right_text, True, config.color_header_text)
+        right_label = self.header_font.render(right_text, True, time_color)
         self.screen.blit(right_label, (config.width - right_label.get_width() - 10, 12))
 
         # [Issue #4] 3. 중앙: 최고 기록 표시
@@ -304,29 +304,21 @@ class Game:
             current_time_color = (255, 50, 50) #빨간색
         else:
             current_time_color = config.color_header_text #기본 흰색
-
-        # 4. 헤더 그리기(색상 정보인 time_color 추가 전달)
-        self.renderer.draw_header(remaining, time_text, time_color=current_time_color)
-
-
-        # 1. 남은 지뢰 수 계산
-        flag_count = self.board.flagged_count()
-        display_mines = config.num_mines - flag_count  # 전체 지뢰 - 깃발 수
-
-        # 2. 현재 시간 포맷팅
-        time_ms = self._elapsed_ms()
-        time_text = self._format_time(time_ms)
-
-        # 3. [Issue #4] 최고 기록 불러오기 및 텍스트 생성
+        
         best_ms = load_highscore()
         if best_ms is not None:
             best_text = f"Best: {self._format_time(best_ms)}"
         else:
             best_text = "Best: --:--"
+       
+
+
+        # 3. [Issue #4] 최고 기록 불러오기 및 텍스트 생성
+        # 4. 헤더 그리기(색상 정보인 time_color 추가 전달)
+        self.renderer.draw_header(remaining, time_text,best_text, time_color=current_time_color)
 
         # 4. 헤더 그리기
-        # 인자 순서: (남은 지뢰 수, 현재 시간, 최고 기록 텍스트)
-        self.renderer.draw_header(display_mines, time_text, best_text)
+  
 
         # 5. 셀(Grid) 그리기
         now = pygame.time.get_ticks()
