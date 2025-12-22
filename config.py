@@ -51,8 +51,8 @@ color_result = (242, 242, 0)
 
 # Number colors 1~8
 number_colors = {
-    1: (25, 118, 210),   # blue
-    2: (56, 142, 60),    # green
+    1: (30, 144, 255),   # 기존 파랑 대신 'dodger blue'로 변경(조금 더 밝은 파랑)
+    2: (50, 205, 50),    # 기존 초록 대신 'lime green'로 변경(조금 더 밝은 초록)
     3: (211, 47, 47),    # red
     4: (123, 31, 162),   # purple
     5: (255, 143, 0),    # orange
@@ -81,3 +81,9 @@ result_overlay_alpha = 120
 # Misc
 title = "Minesweeper"
 
+# [Issue #2] 난이도 프리셋 설정
+DIFFICULTY_LEVELS = {
+    'Beginner': {'cols': 10, 'rows': 10, 'mines': 10},          #초급
+    'Intermediate': {'cols': 15, 'rows': 15, 'mines': 40},      #중급
+    'Expert': {'cols': 20, 'rows': 20, 'mines': 80},            #고급 
+}
