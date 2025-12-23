@@ -12,8 +12,8 @@ can call in response to user inputs, and does not know anything about
 rendering, timing, or input devices.
 """
 
-import random
-from typing import List, Tuple
+import random #[Issue #3] 랜덤 선택을 위한 코드
+from typing import List, Tuple, Optional
 
 
 class CellState:
@@ -172,6 +172,20 @@ class Board:
                 self.reveal(nc, nr)
         
         self._check_win()
+
+
+    # [Issue #3] 힌트 기능: 안전한 미오픈 칸 하나를 무작위로 오픈
+    def reveal_hint(self) -> None:
+        # 1. 힌트 후보 찾기 (아직 안 열림 + 지뢰 아님 + 깃발 안 꽂힘)
+        candidates = []
+        for cell in self.cells:
+            if (not cell.state.is_revealed) and (not cell.state.is_mine) and (not cell.state.is_flagged):
+                candidates.append((cell.col, cell.row))
+        
+        # 2. 후보가 있다면 그 중 하나를 랜덤으로 선택해 오픈(reveal)
+        if candidates:
+            col, row = random.choice(candidates)
+            self.reveal(col, row)
 
     def toggle_flag(self, col: int, row: int) -> None:
         # TODO: Toggle a flag on a non-revealed cell.

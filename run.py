@@ -339,6 +339,14 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.reset()
+
+                # ... (난이도 설정 코드들 1, 2, 3 ...) ...
+
+                # [Issue #3] 'H' 키를 누르면 힌트 사용
+                elif event.key == pygame.K_h:
+                    #게임이 진행 중이고, 아직 안 끝났을 때만 작동
+                    if self.started and not self.board.game_over:
+                        self.board.reveal_hint()
                 
                 # [Issue #2: 난이도 조절] (이전 작업 내용 복구)
                 # [Issue #2] 숫자 키(1, 2, 3)로 난이도 변경 기능 추가
